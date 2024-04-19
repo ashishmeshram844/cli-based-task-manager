@@ -1,0 +1,118 @@
+"""
+- CLI BASED APPLICATION TO STORE ALL MY DAILY TASKS
+- commands:
+    - add  - add a new task
+    - delete - delete a task by id
+    - list - display all tasks in db
+"""
+
+import sys
+import sqlite3
+from prettytable import PrettyTable
+
+conn = sqlite3.connect('daily_tasks.db')
+def create_cursor(conn = conn):
+    cursor = conn.cursor()
+    return cursor
+
+def create_task_table(cursor):
+    # Define the table name and columns
+    table_name = "Tasks"
+    columns = "(id INTEGER PRIMARY KEY AUTOINCREMENT, datetime DATETIME DEFAULT CURRENT_TIMESTAMP, task_detail TEXT)"
+    create_table_query = f"CREATE TABLE IF NOT EXISTS {table_name} {columns}"
+    cursor.execute(create_table_query)
+    conn.commit()
+
+def get_cursor():
+    cursor = create_cursor()
+    create_task_table(cursor)
+    return cursor
+
+
+def add_task(task):
+    try:
+        cursor = get_cursor()    
+        result = cursor.execute("INSERT INTO Tasks (task_detail) VALUES (?)", (task,))
+        conn.commit()
+        print("\033[32m Task Addedd Successfully  \033[0m")
+    except Exception as e:
+        print("\033[31m Failed to add Task !  \033[0m")
+
+
+
+def display_tasks(tasks_data):
+    table = PrettyTable()
+    table.field_names = ["ID", "DATE", "TASK DETAIL"]
+    for row in tasks_data:
+        table.add_row([row[0], row[1], row[2]])
+    print(table)
+
+
+def fetch_all_tasks():
+    cursor = get_cursor()    
+    result = cursor.execute("SELECT * FROM Tasks").fetchall()
+    return result
+
+def list_tasks():
+    try:
+        result = fetch_all_tasks()
+        display_tasks(result)
+    except Exception as e:
+        print("\033[31m Failed to Load Tasks List !  \033[0m")
+
+
+def check_task_is_avail(task_id):
+    cursor = get_cursor() 
+    cursor.execute("SELECT * FROM Tasks WHERE id = ?", (task_id,))
+    row = cursor.fetchone()    
+    return not row is None
+
+def delete_task(task_id):
+    try:
+        cursor = get_cursor()    
+        if check_task_is_avail(task_id):
+            cursor.execute("DELETE FROM Tasks WHERE id = ?", (task_id,))
+            conn.commit()
+            print("\033[32m Task Deleted Successfully  \033[0m")
+        else:
+            print("\033[31m Task is not Available | Failed to delete  !  \033[0m")
+
+
+    except Exception as e:
+        print(e)
+        print("\033[31m Failed to Delete Tasks  !  \033[0m")
+
+
+def handle_arguments(avail_arg):
+    match avail_arg:
+        case 'add':
+            task = str(input("Enter a Task : "))
+            add_task(task)
+        case 'list':
+            list_tasks()
+        case 'delete':
+            try:
+                task_id = int(input("Enter Task ID : "))
+                delete_task(task_id)
+            except Exception as e:
+                print("\033[31m Please Provide proper Id of task !  \033[0m")
+
+        case _:
+            print("\033[31m Please Provide proper Argument !  \033[0m")
+            print("\033[32m Available arguments are [add, update, delete, list]  \033[0m")
+
+
+
+def main():
+    args_avail = len(sys.argv[1:])
+    match args_avail:
+        case 0:
+            print("\033[31m Please Provide some argument!  \033[0m")
+            print("\033[32m Available arguments are [add, update, delete, list]  \033[0m")
+        case 1:
+            handle_arguments(sys.argv[1])
+        case _:
+            print("\033[31m You cant use more than one argument at a time !  \033[0m")
+if __name__ == '__main__':
+    main()
+    conn.close()
