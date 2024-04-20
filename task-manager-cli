@@ -13,7 +13,7 @@ from prettytable import PrettyTable
 import getpass
 import hashlib
 import os 
-
+import signal
 
 conn = sqlite3.connect('/home/ashish/Desktop/personal_projects/my-work/daily_tasks.db')
 
@@ -104,20 +104,31 @@ class UserManagement(object):
             match splitted_operations[0]:
                 case 'add':
                     try:
-                        user_data = self.create_user_inputs()
-                        self.create_user(user_data[0],user_data[1])
+                        if len(splitted_operations) == 1:
+                            user_data = self.create_user_inputs()
+                            self.create_user(user_data[0],user_data[1])
+                        else:
+                            print("\033[31m Extra parameters not alowed while adding user !  \033[0m")
                     except Exception as e:
                         print("\033[31m Failed to create user !  \033[0m")
                 case 'update':
                     print("Update User")
                 case 'delete':
                     try:
-                        username = str(input("Enter username which you want to delete : "))
-                        self.delete_user(username)
+                        if len(splitted_operations) == 1:
+                            username = str(input("Enter username which you want to delete : "))
+                            self.delete_user(username)
+                        elif len(splitted_operations) == 2:
+                            self.delete_user(splitted_operations[1])
+                        else:
+                            print("\033[31m Extra Parameters not alowd !  \033[0m")
                     except Exception as e:
                         print("\033[31m Failed to delete user !  \033[0m")
                 case 'list':
-                    self.list_users()
+                    if len(splitted_operations) == 1:
+                        self.list_users()
+                    else:
+                        print("\033[31m No Extra parameters are allowed !  \033[0m")
                 case _:
                     print("\033[31m Wrong Opeeration !  \033[0m")
         else:
@@ -134,7 +145,9 @@ class UserManagement(object):
                 print("User Module Closed")
                 break
             splitted_operations = operation.split(" ")
-            if len(splitted_operations) <= 2:
+            if operation == 'clear':
+                os.system('clear')
+            elif len(splitted_operations) <= 2:
                 self.user_operation_handle(splitted_operations)
             else:
                 print("\033[33m Cant use more than two arguments at a time !  \033[0m")
@@ -338,7 +351,9 @@ class WorkConsole(UserManagement):
                 print("Task Module Closed")
                 break
             splitted_operations = operation.split(" ")
-            if len(splitted_operations) <= 2:
+            if operation == 'clear':
+                os.system('clear')
+            elif len(splitted_operations) <= 2:
                 self.task_operation_handle(splitted_operations)
             else:
                 print("\033[33m Cant use more than two arguments at a time !  \033[0m")
@@ -395,16 +410,17 @@ class WorkConsole(UserManagement):
             # self.print_available_modules()
             module_input = self.choose_module()
             module_parsed = module_input.split(" ")
-            is_helper = self.helper_commands(module_parsed[0])
+            # is_helper = self.helper_commands(module_parsed[0])
 
             if len(module_parsed) == 1:
                 if module_parsed[0] == 'exit':
                     break
+                elif module_parsed[0] == 'clear':
+                    os.system('clear')
                 elif module_parsed[0] in self.available_modules:
                     self.modules(module_parsed[0])
                 else:
-                    if not is_helper:
-                        print("\033[31m Invalid Module Selected !  \033[0m")
+                    print("\033[31m Invalid Module Selected !  \033[0m")
                     print(f"\033[32m Available Modules are {self.available_modules}  \033[0m")
             else:
                 print("\033[31m Inputed Module is not available !  \033[0m")
@@ -453,10 +469,16 @@ class Login(object):
         auth_obj = self.validate_credentials(username,password)
         return auth_obj
 
+
+def signal_handler(sig, frame):
+    print("\033[31m \n Closed application forcefully !  \033[0m")
+    sys.exit(0)
+
 if __name__ == '__main__':
     """
     Entry point of programme
     """
+    signal.signal(signal.SIGINT, signal_handler)
     try:
         login_obj = Login()
         auth = login_obj.login_user()
