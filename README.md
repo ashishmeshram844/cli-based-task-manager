@@ -14,6 +14,10 @@
 - eg: alias work=/home/ashish/path_to_file.py
 - then you can simply run work on terminal
 - you can access this using alias from anywhere
+
+#### Admin User Credentials : 
+- username : ashishmeshram844
+- password : ashish@123
  
 
 ### Some screenshots :
